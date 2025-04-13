@@ -4,8 +4,8 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Platform,
   Pressable,
+  Alert,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -14,33 +14,62 @@ import { LinearGradient } from 'expo-linear-gradient';
 export default function LeaveForm() {
   const [name, setName] = useState('');
   const [leaveType, setLeaveType] = useState('');
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [reason, setReason] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
   const handleSubmit = () => {
-    console.log({
-      name,
-      leaveType,
-      startDate: startDate.toDateString(),
-      endDate: endDate.toDateString(),
-      reason,
-    });
-     setName('');
+    if (!name.trim()) {
+      Alert.alert('Validation Error', 'Please enter your name.');
+      return;
+    }
+
+    if (!leaveType) {
+      Alert.alert('Validation Error', 'Please select a leave type.');
+      return;
+    }
+
+    if (!startDate) {
+      Alert.alert('Validation Error', 'Please select a start date.');
+      return;
+    }
+
+    if (!endDate) {
+      Alert.alert('Validation Error', 'Please select an end date.');
+      return;
+    }
+
+    if (endDate < startDate) {
+      Alert.alert('Validation Error', 'End date cannot be earlier than start date.');
+      return;
+    }
+
+    if (!reason.trim()) {
+      Alert.alert('Validation Error', 'Please enter the reason for leave.');
+      return;
+    }
+
+    // console.log({
+    //   name,
+    //   leaveType,
+    //   startDate: startDate.toDateString(),
+    //   endDate: endDate.toDateString(),
+    //   reason,
+    // });
+
+    Alert.alert('Success', 'Leave application submitted successfully!');
+
+    setName('');
     setLeaveType('');
-    setStartDate(new Date());
-    setEndDate(new Date());
+    setStartDate(null);
+    setEndDate(null);
     setReason('');
   };
-  
 
   return (
-    <LinearGradient
-    colors={["#7dd3fc", "#bae6fd", "#fff"]}
-      className="flex-1"
-    >
+    <LinearGradient colors={['#7dd3fc', '#bae6fd', '#fff']} className="flex-1">
       <ScrollView className="p-4">
         <Text className="text-2xl font-bold text-gray-800 mb-6 text-center">
           Leave Application Form
@@ -71,13 +100,14 @@ export default function LeaveForm() {
           onPress={() => setShowStartPicker(true)}
           className="p-2 border border-gray-300 rounded-md bg-white mb-4"
         >
-          <Text>{startDate.toDateString()}</Text>
+          <Text>{startDate ? startDate.toDateString() : 'Select start date'}</Text>
         </Pressable>
         {showStartPicker && (
           <DateTimePicker
-            value={startDate}
+            value={startDate || new Date()}
             mode="date"
             display="default"
+            minimumDate={new Date()}
             onChange={(event, date) => {
               setShowStartPicker(false);
               if (date) setStartDate(date);
@@ -90,13 +120,14 @@ export default function LeaveForm() {
           onPress={() => setShowEndPicker(true)}
           className="p-2 border border-gray-300 rounded-md bg-white mb-4"
         >
-          <Text>{endDate.toDateString()}</Text>
+          <Text>{endDate ? endDate.toDateString() : 'Select end date'}</Text>
         </Pressable>
         {showEndPicker && (
           <DateTimePicker
-            value={endDate}
+            value={endDate || new Date()}
             mode="date"
             display="default"
+            minimumDate={startDate || new Date()}
             onChange={(event, date) => {
               setShowEndPicker(false);
               if (date) setEndDate(date);
