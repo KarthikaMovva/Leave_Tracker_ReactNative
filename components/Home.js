@@ -1,8 +1,7 @@
 import React from "react";
-import { Text, View, FlatList } from "react-native";
+import { Text, View, FlatList, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
-
 
 const recentLeaves = [
   {
@@ -27,38 +26,39 @@ const recentLeaves = [
 
 const Home = () => {
   return (
-    <LinearGradient
-      colors={["skyblue","lightblue","white"
-      ]}
-      className="flex-1 px-5 pt-10"
-    >
-      <Text className="text-2xl font-bold mb-2">Welcome back</Text>
-      <Text className="text-base text-gray-600 mb-6">
-        Here’s a quick look at leave activity.
-      </Text>
+    <LinearGradient colors={["#7dd3fc", "#bae6fd", "#fff"]} className="flex-1">
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-5 pt-10">
+        <View className="flex-1 justify-center">
+          <Text className="text-2xl font-bold mb-2">Welcome back</Text>
+          <Text className="text-base text-gray-600 mb-6">
+            Here’s a quick look at leave activity.
+          </Text>
 
-      <View className="bg-white p-4 rounded-xl mb-6 shadow shadow-gray-300">
-        <Text className="font-semibold text-base">Total leaves applied</Text>
-        <Text className="text-xl font-bold text-blue-500 mt-1">17</Text>
-      </View>
-
-      <Text className="text-base font-semibold mb-3">Recently Applied Leaves</Text>
-
-      <FlatList
-        data={recentLeaves}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View className="bg-white flex-row items-center p-3 rounded-xl mb-3 shadow shadow-gray-200">
-            <View className="w-9 h-9 justify-center items-center mr-3">
-              {item.icon}
-            </View>
-            <View>
-              <Text className="font-semibold text-sm">{item.type}</Text>
-              <Text className="text-gray-500 text-sm">{item.date}</Text>
-            </View>
+          <View className="bg-white p-4 rounded-xl mb-6 shadow shadow-gray-300">
+            <Text className="font-semibold text-base">Total leaves applied</Text>
+            <Text className="text-xl font-bold text-blue-500 mt-1">17</Text>
           </View>
-        )}
-      />
+
+          <Text className="text-base font-semibold mb-3">Recently Applied Leaves</Text>
+
+          <FlatList
+            data={recentLeaves}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+            renderItem={({ item }) => (
+              <View className="bg-white flex-row items-center p-3 rounded-xl mb-3 shadow shadow-gray-200">
+                <View className="w-9 h-9 justify-center items-center mr-3">
+                  {item.icon}
+                </View>
+                <View>
+                  <Text className="font-semibold text-sm">{item.type}</Text>
+                  <Text className="text-gray-500 text-sm">{item.date}</Text>
+                </View>
+              </View>
+            )}
+          />
+        </View>
+      </ScrollView>
     </LinearGradient>
   );
 };
