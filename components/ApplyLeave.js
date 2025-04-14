@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Text,
   TextInput,
@@ -10,6 +10,7 @@ import {
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LeaveForm() {
   const [name, setName] = useState('');
@@ -20,7 +21,8 @@ export default function LeaveForm() {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // Basic validations
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Please enter your name.');
       return;
@@ -51,21 +53,44 @@ export default function LeaveForm() {
       return;
     }
 
-    // console.log({
-    //   name,
-    //   leaveType,
-    //   startDate: startDate.toDateString(),
-    //   endDate: endDate.toDateString(),
-    //   reason,
-    // });
+    const leaveData = {
+      name,
+      leaveType,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      reason,
+    };
 
-    Alert.alert('Success', 'Leave application submitted successfully!');
+    try {
+      const data = await AsyncStorage.getItem('leaveApplications');
+      const existingData = data ? JSON.parse(data) : [];
 
-    setName('');
-    setLeaveType('');
-    setStartDate(null);
-    setEndDate(null);
-    setReason('');
+      existingData.push(leaveData);
+
+      await AsyncStorage.setItem('leaveApplications', JSON.stringify(existingData));
+
+      Alert.alert('Success', 'Leave application submitted successfully!');
+      setName('');
+      setLeaveType('');
+      setStartDate(null);
+      setEndDate(null);
+      setReason('');
+
+      checkStorage();
+    } catch (error) {
+      console.error('Error saving data:', error);
+      Alert.alert('Error', 'Something went wrong while saving your data.');
+    }
+  };
+
+  const checkStorage = async () => {
+    try {
+      const data = await AsyncStorage.getItem('leaveApplications');
+      const parsed = data ? JSON.parse(data) : [];
+      console.log('📦 Stored Leave Applications:', parsed);
+    } catch (error) {
+      console.error('Error reading AsyncStorage:', error);
+    }
   };
 
   return (
@@ -92,7 +117,7 @@ export default function LeaveForm() {
           <Picker.Item label="Select leave type" value="" />
           <Picker.Item label="Sick Leave" value="Sick" />
           <Picker.Item label="Casual Leave" value="Casual" />
-          <Picker.Item label="Annual Leave" value="Annual" />
+          <Picker.Item label="Earned Leave" value="Earned" />
         </Picker>
 
         <Text className="text-base mb-1 text-gray-700">Start Date</Text>
