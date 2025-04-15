@@ -6,11 +6,13 @@ import './global.css'
 import Home from "components/Home";
 import History from "components/History";
 import ApplyLeave from "components/ApplyLeave";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <NavigationContainer>
       <Tab.Navigator screenOptions={({route})=>({
         tabBarActiveTintColor: "#1d4ed8", 
@@ -38,5 +40,6 @@ export default function App() {
         <Tab.Screen name="History" component={History} />
       </Tab.Navigator>
     </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
