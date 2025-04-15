@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Text,
   TextInput,
@@ -12,7 +12,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function LeaveForm() {
+export default function LeaveForm({ navigation }) {
   const [name, setName] = useState('');
   const [leaveType, setLeaveType] = useState('');
   const [startDate, setStartDate] = useState(null);
@@ -20,38 +20,45 @@ export default function LeaveForm() {
   const [reason, setReason] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleSubmit = async () => {
-    // Basic validations
+    let valid = true;
+    const newErrors = {};
+
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter your name.');
-      return;
+      newErrors.name = 'Please enter your name.';
+      valid = false;
     }
 
     if (!leaveType) {
-      Alert.alert('Validation Error', 'Please select a leave type.');
-      return;
+      newErrors.leaveType = 'Please select a leave type.';
+      valid = false;
     }
 
-    if (!startDate) {
-      Alert.alert('Validation Error', 'Please select a start date.');
-      return;
+    if (!(startDate instanceof Date && !isNaN(startDate))) {
+      newErrors.startDate = 'Invalid start date.';
+      valid = false;
     }
 
-    if (!endDate) {
-      Alert.alert('Validation Error', 'Please select an end date.');
-      return;
+    if (!(endDate instanceof Date && !isNaN(endDate))) {
+      newErrors.endDate = 'Invalid end date.';
+      valid = false;
     }
 
-    if (endDate < startDate) {
-      Alert.alert('Validation Error', 'End date cannot be earlier than start date.');
-      return;
+    if (startDate && endDate && endDate < startDate) {
+      newErrors.endDate = 'End date cannot be earlier than start date.';
+      valid = false;
     }
 
     if (!reason.trim()) {
-      Alert.alert('Validation Error', 'Please enter the reason for leave.');
-      return;
+      newErrors.reason = 'Please enter the reason for leave.';
+      valid = false;
     }
+
+    setErrors(newErrors);
+
+    if (!valid) return;
 
     const leaveData = {
       name,
@@ -75,58 +82,68 @@ export default function LeaveForm() {
       setStartDate(null);
       setEndDate(null);
       setReason('');
-
-      checkStorage();
+      setErrors({});
+      navigation.navigate('History');
     } catch (error) {
       console.error('Error saving data:', error);
       Alert.alert('Error', 'Something went wrong while saving your data.');
     }
   };
 
-  const checkStorage = async () => {
-    try {
-      const data = await AsyncStorage.getItem('leaveApplications');
-      const parsed = data ? JSON.parse(data) : [];
-      console.log('📦 Stored Leave Applications:', parsed);
-    } catch (error) {
-      console.error('Error reading AsyncStorage:', error);
-    }
-  };
-
   return (
-    <LinearGradient colors={['#7dd3fc', '#bae6fd', '#fff']} className="flex-1">
+    <LinearGradient colors={['#f0f4f8', '#d9e2ec']} className="flex-1">
       <ScrollView className="p-4">
-        <Text className="text-2xl font-bold text-gray-800 mb-6 text-center">
+        <Text className="text-2xl font-bold text-gray-800 mb-6 text-center text-3xl">
           Leave Application Form
         </Text>
 
-        <Text className="text-base mb-1 text-gray-700">Employee Name</Text>
+        {/* Name */}
+        <Text className="text-base mb-1 text-gray-700 font-semibold text-xl">Employee Name</Text>
         <TextInput
-          className="border border-gray-300 rounded-md p-2 mb-4 bg-white"
+          className={`border rounded-md p-2 mb-1 bg-white text-xl ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="Enter your name"
           value={name}
-          onChangeText={setName}
+          onChangeText={(text) => {
+            setName(text);
+            if (errors.name) setErrors(prev => ({ ...prev, name: null }));
+          }}
         />
+        {errors.name && <Text className="text-red-500 mb-2">{errors.name}</Text>}
 
-        <Text className="text-base mb-1 text-gray-700">Leave Type</Text>
+        {/* Leave Type */}
+        <Text className="text-base mb-1 text-gray-700 font-semibold text-xl">Leave Type</Text>
         <Picker
           selectedValue={leaveType}
-          onValueChange={(itemValue) => setLeaveType(itemValue)}
-          style={{ backgroundColor: 'white', borderRadius: 8, marginBottom: 16 }}
+          onValueChange={(itemValue) => {
+            setLeaveType(itemValue);
+            if (errors.leaveType) setErrors(prev => ({ ...prev, leaveType: null }));
+          }}
+          style={{
+            backgroundColor: 'white',
+            borderRadius: 8,
+            marginBottom: errors.leaveType ? 4 : 16,
+            borderColor: errors.leaveType ? 'red' : '#ccc',
+            borderWidth: 1,
+          }}
         >
           <Picker.Item label="Select leave type" value="" />
           <Picker.Item label="Sick Leave" value="Sick" />
           <Picker.Item label="Casual Leave" value="Casual" />
           <Picker.Item label="Earned Leave" value="Earned" />
         </Picker>
+        {errors.leaveType && <Text className="text-red-500 mb-2">{errors.leaveType}</Text>}
 
-        <Text className="text-base mb-1 text-gray-700">Start Date</Text>
+        {/* Start Date */}
+        <Text className="text-base mb-1 text-gray-700 text-xl font-semibold">Start Date</Text>
         <Pressable
           onPress={() => setShowStartPicker(true)}
-          className="p-2 border border-gray-300 rounded-md bg-white mb-4"
+          className={`p-2 border rounded-md bg-white mb-1 ${errors.startDate ? 'border-red-500' : 'border-gray-300'}`}
         >
-          <Text>{startDate ? startDate.toDateString() : 'Select start date'}</Text>
+          <Text className="text-xl">
+            {startDate ? startDate.toDateString() : 'Select start date'}
+          </Text>
         </Pressable>
+        {errors.startDate && <Text className="text-red-500 mb-2">{errors.startDate}</Text>}
         {showStartPicker && (
           <DateTimePicker
             value={startDate || new Date()}
@@ -135,18 +152,25 @@ export default function LeaveForm() {
             minimumDate={new Date()}
             onChange={(event, date) => {
               setShowStartPicker(false);
-              if (date) setStartDate(date);
+              if (date) {
+                setStartDate(date);
+                if (errors.startDate) setErrors(prev => ({ ...prev, startDate: null }));
+              }
             }}
           />
         )}
 
-        <Text className="text-base mb-1 text-gray-700">End Date</Text>
+        {/* End Date */}
+        <Text className="text-base mb-1 text-gray-700 text-xl font-semibold">End Date</Text>
         <Pressable
           onPress={() => setShowEndPicker(true)}
-          className="p-2 border border-gray-300 rounded-md bg-white mb-4"
+          className={`p-2 border rounded-md bg-white mb-1 ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
         >
-          <Text>{endDate ? endDate.toDateString() : 'Select end date'}</Text>
+          <Text className="text-xl">
+            {endDate ? endDate.toDateString() : 'Select end date'}
+          </Text>
         </Pressable>
+        {errors.endDate && <Text className="text-red-500 mb-2">{errors.endDate}</Text>}
         {showEndPicker && (
           <DateTimePicker
             value={endDate || new Date()}
@@ -155,25 +179,34 @@ export default function LeaveForm() {
             minimumDate={startDate || new Date()}
             onChange={(event, date) => {
               setShowEndPicker(false);
-              if (date) setEndDate(date);
+              if (date) {
+                setEndDate(date);
+                if (errors.endDate) setErrors(prev => ({ ...prev, endDate: null }));
+              }
             }}
           />
         )}
 
-        <Text className="text-base mb-1 text-gray-700">Reason</Text>
+        {/* Reason */}
+        <Text className="text-base mb-1 text-gray-700 text-xl font-semibold">Reason</Text>
         <TextInput
-          className="border border-gray-300 rounded-md p-2 mb-4 h-24 bg-white text-start"
+          className={`border rounded-md p-2 mb-1 h-24 bg-white text-xl ${errors.reason ? 'border-red-500' : 'border-gray-300'}`}
           placeholder="Enter reason for leave"
           value={reason}
-          onChangeText={setReason}
+          onChangeText={(text) => {
+            setReason(text);
+            if (errors.reason) setErrors(prev => ({ ...prev, reason: null }));
+          }}
           multiline
         />
+        {errors.reason && <Text className="text-red-500 mb-2">{errors.reason}</Text>}
 
+        {/* Submit Button */}
         <TouchableOpacity
-          className="bg-blue-600 p-3 rounded-md mt-2"
+          className="bg-[#3f72af] p-3 rounded-md mt-2"
           onPress={handleSubmit}
         >
-          <Text className="text-white text-center font-semibold">Submit</Text>
+          <Text className="text-white text-center font-bold text-3xl">Submit</Text>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>

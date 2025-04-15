@@ -4,10 +4,12 @@ import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function History() {
   const [leaveApplications, setLeaveApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
     const fetchLeaveApplications = async () => {
@@ -21,10 +23,13 @@ export default function History() {
       } finally {
         setLoading(false);
       }
+      if (isFocused) {
+        fetchLeaveApplications(); 
+      }
     };
 
     fetchLeaveApplications();
-  }, [leaveApplications]);
+  }, [isFocused]);
 
   const renderLeaveIcon = (type) => {
     switch (type) {
@@ -48,7 +53,7 @@ export default function History() {
 
   return (
     <LinearGradient
-    colors={["skyblue", "lightblue", "white"]}
+    colors={['#f0f4f8', '#d9e2ec']}
     style={{ flex: 1 }}
   >
     <View className="flex-1 p-4">
@@ -63,27 +68,27 @@ export default function History() {
           {leaveApplications.map((application, index) => (
             <View
               key={index}
-              className="bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb] mb-3 flex-row space-x-4 items-start"
+              className="bg-white p-4 rounded-xl shadow-md border border-gray-300 mb-3 flex-row space-x-4 items-start"
             >
               <View className="mt-1">
                 {renderLeaveIcon(application.leaveType)}
               </View>
   
-              <View className="flex-1">
-                <View className="flex-row items-spacebetween mb-1 space-x-2">
-                  <MaterialIcons name="person-outline" size={18} color="#6b7280" style={{}}/>
-                  <Text className="text-gray-800 font-semibold">
+              <View className="flex-1 pl-3 space-y-2.5">
+                <View className="flex-row justify-between mb-1 space-x-2">
+                  {/* <MaterialIcons name="person-outline" size={18} color="#6b7280" style={{}}/> */}
+                  <Text className="text-gray-800 font-semibold text-2xl">
                     {application.name}
                   </Text>
                 </View>
-  
-                <Text className="text-gray-700 mb-1">
+                <Text className='font-semibold text-xl text-blue-500'>{application.leaveType} Leave</Text>
+                <Text className="text-orange-600 mb-1 font-semibold text-xl">
                   {application.startDate === application.endDate
                     ? formatDate(application.startDate)
                     : `${formatDate(application.startDate)} - ${formatDate(application.endDate)}`}
                 </Text>
   
-                <Text className="text-gray-500">{application.reason}</Text>
+                <Text className="text-gray-500 text-xl">{application.reason}</Text>
               </View>
             </View>
           ))}
