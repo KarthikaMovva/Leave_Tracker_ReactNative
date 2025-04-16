@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   ScrollView,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -20,8 +21,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useIsFocused } from '@react-navigation/native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
 
-export default function History() {
+export default function History({ navigation }) {
   const [leaveApplications, setLeaveApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
@@ -34,15 +36,18 @@ export default function History() {
 
   useEffect(() => {
     const fetchLeaveApplications = async () => {
+      setLoading(true);
       try {
         const data = await AsyncStorage.getItem('leaveApplications');
         if (data) {
-          setLeaveApplications(JSON.parse(data));
+          const parsed = JSON.parse(data);
+          setLeaveApplications(Array.isArray(parsed) ? parsed : []);
         } else {
           setLeaveApplications([]);
         }
       } catch (error) {
         console.error('Error fetching leave applications:', error);
+        Alert.alert('Error', 'Failed to load leave applications');
       } finally {
         setLoading(false);
       }
@@ -60,23 +65,34 @@ export default function History() {
       year: 'numeric',
     });
 
-  const renderLeaveIcon = (type) => {
-    switch (type) {
-      case 'Sick':
-        return <MaterialIcons name="medical-services" size={36} color="#e11d48" />;
-      case 'Casual':
-        return <MaterialCommunityIcons name="umbrella-beach" size={36} color="#facc15" />;
-      case 'Earned':
-        return <FontAwesome5 name="briefcase" size={32} color="#10b981" />;
-      default:
-        return null;
-    }
+  const LEAVE_TYPES = {
+    Sick: {
+      icon: <MaterialIcons name="medical-services" size={35} color="#e11d48" />,
+      bg: '#fff5f5',
+    },
+    Casual: {
+      icon: <MaterialCommunityIcons name="umbrella-beach" size={35} color="#fbbf24" />,
+      bg: '#fffdea',
+    },
+    Earned: {
+      icon: <FontAwesome5 name="briefcase" size={35} color="#10b981" />,
+      bg: '#f0fdf4',
+    },
+    Default: {
+      icon: <FontAwesome5 name="calendar-alt" size={22} color="#6b7280" />,
+      bg: '#f9fafb',
+    },
   };
 
-  const deleteApplication = async (rowKey) => {
-    const updated = leaveApplications.filter((_, index) => index !== rowKey);
-    setLeaveApplications(updated);
-    await AsyncStorage.setItem('leaveApplications', JSON.stringify(updated));
+  const deleteApplication = async (index) => {
+    try {
+      const updated = leaveApplications.filter((_, i) => i !== index);
+      setLeaveApplications(updated);
+      await AsyncStorage.setItem('leaveApplications', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      Alert.alert('Error', 'Failed to delete leave application');
+    }
   };
 
   const openEditModal = (data, index) => {
@@ -86,21 +102,44 @@ export default function History() {
   };
 
   const updateApplication = async () => {
-    const updatedList = [...leaveApplications];
-    updatedList[editIndex] = editData;
-    setLeaveApplications(updatedList);
-    await AsyncStorage.setItem('leaveApplications', JSON.stringify(updatedList));
-    setModalVisible(false);
+    if (
+      !editData?.name ||
+      !editData?.reason ||
+      !editData?.startDate ||
+      !editData?.endDate ||
+      !editData?.leaveType
+    ) {
+      Alert.alert('Validation Error', 'All fields are required');
+      return;
+    }
+
+    try {
+      const updatedList = [...leaveApplications];
+      updatedList[editIndex] = editData;
+      setLeaveApplications(updatedList);
+      await AsyncStorage.setItem('leaveApplications', JSON.stringify(updatedList));
+      setModalVisible(false);
+    } catch (error) {
+      console.error('Error updating leave application:', error);
+      Alert.alert('Error', 'Failed to update leave application');
+    }
   };
 
   const renderItem = ({ item, index }) => (
-    <View className="bg-white p-4 rounded-xl shadow-md border border-gray-300 mb-3 flex-row space-x-4 items-start">
-      <View className="mt-1">{renderLeaveIcon(item.leaveType)}</View>
+    <View
+      style={{
+        backgroundColor: LEAVE_TYPES[item.leaveType]?.bg || LEAVE_TYPES.Default.bg,
+      }}
+      className="p-4 rounded-xl shadow-lg border border-gray-300 mb-3 flex-row space-x-4 items-start"
+    >
+      <View className="mt-1">
+        {LEAVE_TYPES[item.leaveType]?.icon || LEAVE_TYPES.Default.icon}
+      </View>
       <View className="flex-1 pl-3 space-y-2.5">
         <Text className="text-gray-800 font-semibold text-2xl">{item.name}</Text>
         <Text className="font-semibold text-xl text-blue-500">{item.leaveType} Leave</Text>
         <Text className="text-orange-600 mb-1 font-semibold text-xl">
-          {item.startDate === item.endDate
+        {item.startDate === item.endDate
             ? formatDate(item.startDate)
             : `${formatDate(item.startDate)} - ${formatDate(item.endDate)}`}
         </Text>
@@ -115,7 +154,7 @@ export default function History() {
     </View>
   );
 
-  const renderHiddenItem = (data, rowMap) => (
+  const renderHiddenItem = (data) => (
     <TouchableOpacity
       className="bg-red-500 justify-center items-center w-24 h-36 rounded-xl ml-auto"
       onPress={() =>
@@ -135,9 +174,23 @@ export default function History() {
         {loading ? (
           <ActivityIndicator size="large" color="#2563eb" />
         ) : leaveApplications.length === 0 ? (
-          <Text className="text-center text-gray-600 mt-10">
-            No leave applications found.
-          </Text>
+          <View className="flex-1 items-center justify-center mt-32">
+            <MaterialCommunityIcons
+              name="calendar-remove-outline"
+              size={40}
+              color="#9ca3af"
+              style={{ alignSelf: 'center' }}
+            />
+            <Text className="text-lg text-gray-500 text-center mt-4 font-semibold">
+              No leaves found 👌
+            </Text>
+            <TouchableOpacity
+              className="w-30 h-15 bg-red-400 p-3 mt-4 rounded-full"
+              onPress={() => navigation.navigate('Apply Leave')}
+            >
+              <Text className="text-white font-semibold text-xl text-center">Apply Leave</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <SwipeListView
             data={leaveApplications}
@@ -176,7 +229,6 @@ export default function History() {
                   onChangeText={(text) => setEditData({ ...editData, reason: text })}
                 />
 
-                {/* Start Date Picker */}
                 <TouchableOpacity
                   className="border border-gray-300 rounded-md p-2 mb-3"
                   onPress={() => setShowStartPicker(true)}
@@ -187,12 +239,12 @@ export default function History() {
                 </TouchableOpacity>
                 {showStartPicker && (
                   <DateTimePicker
-                    value={new Date(editData?.startDate)}
+                    value={new Date(editData?.startDate || new Date())}
                     mode="date"
                     display="default"
                     minimumDate={new Date()}
                     onChange={(event, selectedDate) => {
-                      setShowStartPicker(false);
+                      setShowStartPicker(Platform.OS === 'ios');
                       if (selectedDate) {
                         setEditData({ ...editData, startDate: selectedDate.toISOString() });
                       }
@@ -200,7 +252,6 @@ export default function History() {
                   />
                 )}
 
-                {/* End Date Picker */}
                 <TouchableOpacity
                   className="border border-gray-300 rounded-md p-2 mb-3"
                   onPress={() => setShowEndPicker(true)}
@@ -211,12 +262,12 @@ export default function History() {
                 </TouchableOpacity>
                 {showEndPicker && (
                   <DateTimePicker
-                    value={new Date(editData?.endDate)}
+                    value={new Date(editData?.endDate || new Date())}
                     mode="date"
                     display="default"
                     minimumDate={new Date()}
                     onChange={(event, selectedDate) => {
-                      setShowEndPicker(false);
+                      setShowEndPicker(Platform.OS === 'ios');
                       if (selectedDate) {
                         setEditData({ ...editData, endDate: selectedDate.toISOString() });
                       }
@@ -224,14 +275,17 @@ export default function History() {
                   />
                 )}
 
-                <TextInput
-                  placeholder="Leave Type (Sick, Casual, Earned)"
-                  className="border border-gray-300 rounded-md px-3 py-2 mb-4 text-lg"
-                  value={editData?.leaveType}
-                  onChangeText={(text) => setEditData({ ...editData, leaveType: text })}
-                />
+                <Picker
+                  selectedValue={editData?.leaveType}
+                  onValueChange={(text) => setEditData({ ...editData, leaveType: text })}
+                >
+                  <Picker.Item label="Select leave type" value="" />
+                  <Picker.Item label="Sick Leave" value="Sick" />
+                  <Picker.Item label="Casual Leave" value="Casual" />
+                  <Picker.Item label="Earned Leave" value="Earned" />
+                </Picker>
 
-                <View className="flex-row justify-between space-x-4">
+                <View className="flex-row justify-between space-x-4 mt-4">
                   <TouchableOpacity onPress={() => setModalVisible(false)}>
                     <Text className="text-red-600 font-semibold text-lg">Cancel</Text>
                   </TouchableOpacity>

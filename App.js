@@ -5,6 +5,7 @@ import { FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 import './global.css'
 import Home from "components/Home";
 import History from "components/History";
+import Toast from 'react-native-toast-message';
 import ApplyLeave from "components/ApplyLeave";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -40,6 +41,8 @@ export default function App() {
         <Tab.Screen name="History" component={History} />
       </Tab.Navigator>
     </NavigationContainer>
+    <Toast />
     </GestureHandlerRootView>
+
   );
 }
