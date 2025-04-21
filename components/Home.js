@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import RecentLeaveCard from "./RecentLeaveCard";
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import NoLeaves from "./NoLeaves";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useIsFocused } from '@react-navigation/native';
 
@@ -75,18 +75,7 @@ export default function Home({ navigation }) {
                 <Text className="text-xl font-semibold mb-3">Recently Applied Leaves</Text>
 
                 {recentLeaves.length === 0 ? (
-                  <View className="flex-1 items-center justify-center mt-32">
-                    <MaterialCommunityIcons name="calendar-remove-outline" size={40} color="#9ca3af" />
-                    <Text className="text-lg text-gray-500 text-center mt-4 font-semibold">
-                      No recent leaves found 👌
-                    </Text>
-                    <TouchableOpacity
-                      className="w-30 h-15 bg-red-400 p-3 mt-4 rounded-full"
-                      onPress={() => navigation.navigate("Apply Leave")}
-                    >
-                      <Text className="text-white font-semibold text-xl text-center">Apply Leave</Text>
-                    </TouchableOpacity>
-                  </View>
+                   <NoLeaves/>
                 ) : (
                   <FlatList
                     data={recentLeaves}

@@ -22,6 +22,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { SwipeListView } from 'react-native-swipe-list-view';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
+import NoLeaves from './NoLeaves';
 
 export default function History({ navigation }) {
   const [leaveApplications, setLeaveApplications] = useState([]);
@@ -156,7 +157,7 @@ export default function History({ navigation }) {
 
   const renderHiddenItem = (data) => (
     <TouchableOpacity
-      className="bg-red-500 justify-center items-center w-24 h-36 rounded-xl ml-auto"
+      className="bg-red-500 justify-center items-center w-24 h-[90%] rounded-xl ml-auto"
       onPress={() =>
         Alert.alert('Delete Confirmation', 'Are you sure you want to delete this entry?', [
           { text: 'Cancel', style: 'cancel' },
@@ -174,23 +175,7 @@ export default function History({ navigation }) {
         {loading ? (
           <ActivityIndicator size="large" color="#2563eb" />
         ) : leaveApplications.length === 0 ? (
-          <View className="flex-1 items-center justify-center mt-32">
-            <MaterialCommunityIcons
-              name="calendar-remove-outline"
-              size={40}
-              color="#9ca3af"
-              style={{ alignSelf: 'center' }}
-            />
-            <Text className="text-lg text-gray-500 text-center mt-4 font-semibold">
-              No leaves found 👌
-            </Text>
-            <TouchableOpacity
-              className="w-30 h-15 bg-red-400 p-3 mt-4 rounded-full"
-              onPress={() => navigation.navigate('Apply Leave')}
-            >
-              <Text className="text-white font-semibold text-xl text-center">Apply Leave</Text>
-            </TouchableOpacity>
-          </View>
+           <NoLeaves/>
         ) : (
           <SwipeListView
             data={leaveApplications}
